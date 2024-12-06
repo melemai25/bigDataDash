@@ -1,0 +1,44 @@
+# Load the dataset
+data <- read.csv("used_cars_data.csv")
+install.packages("randomForest")
+library(randomForest)
+
+# Select only the relevant columns
+car_data <- data[, c("Price", "Mileage", "Engine")]
+
+# Fit a multiple linear regression model
+model <- lm(Price ~ Mileage + Engine, data = car_data)
+
+# View the summary of the model
+summary(model)
+
+str(car_data)
+
+# Remove non-numeric characters (e.g., ' km/kg', ' kmpl')
+car_data$Mileage <- as.numeric(gsub("[^0-9.]", "", car_data$Mileage))
+
+# Remove non-numeric characters (e.g., ' CC')
+car_data$Engine <- as.numeric(gsub("[^0-9]", "", car_data$Engine))
+
+pairs(car_data[, c("Price", "Mileage", "Engine")], main = "Pairwise Plot")
+
+# Remove rows with missing values in Mileage or Engine
+car_data_clean <- na.omit(car_data)
+
+# Fit the polynomial regression model (degree 4) for Mileage and Engine
+model_poly <- lm(Price ~ poly(Mileage, 4) + poly(Engine, 4), data = car_data_clean)
+
+# View the summary of the model
+summary(model_poly)
+
+# Remove rows with missing values in any column
+car_data_clean <- na.omit(car_data)
+
+# Fit a random forest model
+rf_model <- randomForest(Price ~ Mileage + Engine, data = car_data_clean, ntree = 100)
+
+# View the model summary
+print(rf_model)
+
+plot(rf_model)
+

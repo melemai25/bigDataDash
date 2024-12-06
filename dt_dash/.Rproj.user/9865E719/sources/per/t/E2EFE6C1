@@ -1,0 +1,28 @@
+{
+    "id": "E2EFE6C1",
+    "path": null,
+    "project_path": null,
+    "type": "object_explorer",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1733456759767.0,
+    "source_on_save": false,
+    "relative_order": 3,
+    "properties": {
+        "id": "af73c1397e6f4b9eaa9a27f5aef3c737",
+        "name": "tree.df",
+        "title": "tree.df",
+        "language": "R",
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1726620481,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1733456759767,
+    "read_only": false,
+    "read_only_alternatives": []
+}

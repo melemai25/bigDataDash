@@ -1,0 +1,66 @@
+library(shiny)
+library(ggplot2)
+library(tree)
+# Read the data
+df <- read.csv('car details v4 edited.csv', header = T)
+options(scipen=999) #Helps for preventing scientific notation.
+
+# Define UI
+ui <- fluidPage(
+  titlePanel("Used Car Price Based On "),
+  #Description for the data table
+  h4("This app tries to use data from a used car aution website from (2020) and tries to give the user some information about car prices trend.
+     The main set of data that it is looking at data relating to the performance of the car like the size of the engine and bhp.
+     You can use the histograms to get the general trends of what types of cars are being bought to get a better sense of what cars
+     are worth. You can also use the decision tree for a quick way to predict a cars general price for base on some specs."),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("variable", "Choose a Variable to Visualize for the Right side histogram:",
+                  choices = c("Kilometer", "Max_Power", "Max_Torque", "Engine")),
+      sliderInput("binwidth1", "Bin Width for Price Histogram",
+                  min = 10, max = 50, value = 25),
+      sliderInput("binwidth2", "Bin Width for Histogram on the Far Right",
+                  min = 10, max = 50, value = 25)
+    ),
+    mainPanel(
+      fluidRow(# Allows the 2 histograms to be side to side and the tree to be at the bottom of the app.
+        column(6, plotOutput("histPlot2")),
+        column(6, plotOutput("histPlot1"))
+      ),
+      fluidRow(
+        column(12, h2("Decision Tree for Used Car Price Prediction"), plotOutput("treeOutput"))
+      )
+    )
+  )
+)
+
+# Define Server
+server <- function(input, output) {
+  output$histPlot1 <- renderPlot({ #Histogram that allows users to select the data that is being shown.
+    ggplot(df, aes_string(x = input$variable)) +
+      geom_histogram(fill = "blue", color = "black", bins = input$binwidth2) +
+      ggtitle(paste("Histogram of", input$variable))+
+      ylab("Number of Car Listings")
+  })
+  
+  output$histPlot2 <- renderPlot({ #Histogram that specifically target prices.
+    ggplot(df, aes(x = priceUSD)) +
+      geom_histogram(fill = "grey", color = "black", bins = input$binwidth1) +
+      ggtitle("Histogram of Price")+
+      ylab("Number of Car Listings")
+  })
+  output$treeOutput <- renderPlot({
+    df <- subset(df, select = -c(X0.012,Price.inr,Width,Year)) #Removes the column that shouldn't factor in the tree.
+    set.seed(1)
+    #creates the decision tree using the subset data.
+    train = sample(1:nrow(df), nrow(df)/2)
+    tree.df=tree(priceUSD~.,df,subset=train)
+    #Prints out the data tree.
+    summary(tree.df)
+    plot(tree.df)
+    text(tree.df,pretty=0)
+  })
+}
+
+# Run the app
+shinyApp(ui = ui, server = server)

@@ -1,0 +1,26 @@
+{
+    "id": "A888391F",
+    "path": "~/lab1/team/demo.cars/models/tree_reactive/viz.R",
+    "project_path": "tree_reactive/viz.R",
+    "type": "r_source",
+    "hash": "240199303",
+    "contents": "",
+    "dirty": false,
+    "created": 1733476620088.0,
+    "source_on_save": false,
+    "relative_order": 8,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "276,8",
+        "scrollLine": "275"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1733477789,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1733477789495,
+    "read_only": false,
+    "read_only_alternatives": []
+}

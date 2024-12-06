@@ -1,0 +1,28 @@
+{
+    "id": "CB8E5230",
+    "path": null,
+    "project_path": null,
+    "type": "object_explorer",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1730926178667.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "id": "a94a3fd78aa34ca3a731444953a21b57",
+        "name": "NCI60",
+        "title": "NCI60",
+        "language": "R",
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 2035762399064,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1730926178667,
+    "read_only": false,
+    "read_only_alternatives": []
+}
