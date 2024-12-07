@@ -20,7 +20,11 @@ ui <- fluidPage(
       sliderInput("binwidth1", "Bin Width for Price Histogram",
                   min = 10, max = 50, value = 25),
       sliderInput("binwidth2", "Bin Width for Histogram on the Far Right",
-                  min = 10, max = 50, value = 25)
+                  min = 10, max = 50, value = 25),
+      h3("Predict your price using the tree."),
+      sliderInput("mileage", "Mileage", min = 0, max = 2000000, value = 50000),
+      sliderInput("Max_Power", "Max_Power", min = 20, max = 800, value = 150),
+      sliderInput("Max_Torque", "Max_Torque", min = 20, max = 800, value = 150),
     ),
     mainPanel(
       fluidRow(
@@ -29,7 +33,9 @@ ui <- fluidPage(
       ),
       fluidRow(
         column(12, h2("Decision Tree for Used Car Price Prediction"), plotOutput("treeOutput"))
-      )
+      ),
+      h2("Predicted Price"),
+      textOutput("predictedPrice")
     )
   )
 )
@@ -49,7 +55,7 @@ server <- function(input, output) {
       ylab("Number of Car Listings")
   })
   output$treeOutput <- renderPlot({
-    df <- subset(df, select = -c(X0.012,Price.inr,Width,Year))
+    df <- subset(df, select = -c(X0.012,Price.inr,Width,Year, Length, Height, Fuel.Tank.Capacity))
     set.seed(1)
     train = sample(1:nrow(df), nrow(df)/2)
     tree.df=tree(priceUSD~.,df,subset=train)
@@ -57,6 +63,26 @@ server <- function(input, output) {
     summary(tree.df)
     plot(tree.df)
     text(tree.df,pretty=0)
+  })
+  output$predictedPrice <- renderText({
+    # Create a new data frame with user-specified values
+    new_data <- data.frame(
+      Kilometer = input$mileage,
+      Max_Power = input$Max_Power,
+      Engine = 100,
+      Max_Torque = input$Max_Torque,
+      Year = 2020,
+      Length = 2000,
+      Width = 2000,
+      Height = 2000,
+      Fuel.Tank.Capacity = 30
+    )
+    
+    # Make prediction using the decision tree model
+    predicted_price <- predict(tree.df, newdata = new_data)
+    
+    # Display the predicted price
+    paste("Predicted Price:", round(predicted_price, 2))
   })
 }
 
