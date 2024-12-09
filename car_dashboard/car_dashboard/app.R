@@ -6,7 +6,7 @@ library(glmnet)
 library(data.table) 
 
 # Load and preprocess the data
-usa_data <- fread("USA_CAR_DATASET.csv")  # Use fread for faster data loading since it was taking super long to load up dataset
+usa_data <- read.csv("USA_CAR_DATASET.csv")  
 
 usa_clean <- usa_data %>%
   select(price, year, brand, model, mileage, title_status) %>%
@@ -84,14 +84,45 @@ ui <- fluidPage(
   titlePanel("Car Price Prediction - Ridge Regression"),
   sidebarLayout(
     sidebarPanel(
-      selectInput("brand", "Select Brand:", choices = unique(usa_clean$brand)),
-      sliderInput("year", "Car Year:", min = 1990, max = 2024, value = 2015, step = 1, sep = ""),
-      sliderInput("mileage", "Mileage:", min = 0, max = 300000, value = 50000, step = 1000),
-      selectInput("title_status", "Title Status:", choices = unique(usa_clean$title_status)),
-      actionButton("predict_btn", "Predict Price")
+      selectInput(
+        "brand", 
+        "Select Brand:", 
+        choices = unique(usa_clean$brand)
+      ),
+      helpText("Choose the car manufacturer from the list of available brands. Only brands with sufficient data are included."),
+      
+      sliderInput(
+        "year", 
+        "Car Year:", 
+        min = 1990, 
+        max = 2024, 
+        value = 2015, 
+        step = 1, 
+        sep = ""
+      ),
+      helpText("Select the manufacturing year of the car. Older cars may generally have lower prices, depending on other factors."),
+      
+      sliderInput(
+        "mileage", 
+        "Mileage:", 
+        min = 0, 
+        max = 300000, 
+        value = 50000, 
+        step = 1000
+      ),
+      helpText("Set the total mileage of the car. Lower mileage typically indicates less wear and tear, which can result in higher prices."),
+      
+      selectInput(
+        "title_status", 
+        "Title Status:", 
+        choices = unique(usa_clean$title_status)
+      ),
+      helpText("Select the car's title status (e.g., Clean, Salvage). Clean titles usually increase a car's value."),
+      
+      actionButton("predict_btn", "Predict Price"),
+      textOutput("predicted_price")
     ),
     mainPanel(
-      textOutput("predicted_price"),
       plotOutput("plot"),
       plotOutput("scatter_plot")
     )
