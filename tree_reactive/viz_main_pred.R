@@ -112,12 +112,19 @@ clean_data<- clean_data[rowSums(is.na(clean_data)) <= 1, ]
 incomplete_clean_data <- clean_data
 clean_data<- clean_data[rowSums(is.na(clean_data)) <= 0, ]
 plot(clean_data$max_speed_km_per_h, clean_data$engine_hp, main = "max speed vs engine hp", xlab = "engine hp", ylab = "max speed km/h")
+library(dplyr)
+
+# Assuming df is your data frame
+numeric_data <- clean_data %>% mutate_all(as.numeric)
+numeric_data[is.na(numeric_data)] <- 0  # Replace NA with 0, or handle as required
 
 
 #model1
 #par(mar = c(0.1, 0.1, 0.1, 0.1))
 set.seed(1)
 train = sample(1:nrow(clean_data), nrow(clean_data)/2)
+
+train = sample(1:nrow(numeric_data), nrow(numeric_data)/2)
 #Experimental----------------------------------------------------- 
 #wasnt able to invest as much time into these other ones
 #tree.car=tree(max_speed_km_per_h ~., clean_data,subset=train)
@@ -226,75 +233,147 @@ train = sample(1:nrow(clean_data), nrow(clean_data)/2)
 
 
 # shiny car
+library(shiny)
+library(dplyr)
+
+# Assuming clean_data and numeric_data are already loaded and processed
 ui <- fluidPage(
-  titlePanel("Max Speed Prediction"),
+  titlePanel("Car Specification Dashboard"),
   sidebarLayout(
     sidebarPanel(
-      sliderInput(inputId = "year_range",
-                  label = "Select Year Range:",
-                  min = 1990,
-                  max = 2024,
-                  value = c(2010, 2020),
-                  step = 1),
-      hr(),
-      verbatimTextOutput("selected_range"),
-
-      sliderInput("tree_depth",
-                  "Select Tree Depth:",
-                  min = 2,
-                  max = 6,
-                  value = 6)
-
-
-
+      selectInput("make", "Make:", choices = unique(clean_data$make), selected = NULL, multiple = TRUE),
+      selectInput("modle", "Model:", choices = unique(clean_data$modle), selected = NULL, multiple = TRUE),
+      sliderInput("number_of_seats", "Number of Seats:", min = min(clean_data$number_of_seats, na.rm = TRUE), max = max(clean_data$number_of_seats, na.rm = TRUE), value = min(clean_data$number_of_seats, na.rm = TRUE)),
+      sliderInput("length_mm", "Length (mm):", min = min(clean_data$length_mm, na.rm = TRUE), max = max(clean_data$length_mm, na.rm = TRUE), value = min(clean_data$length_mm, na.rm = TRUE)),
+      sliderInput("width_mm", "Width (mm):", min = min(clean_data$width_mm, na.rm = TRUE), max = max(clean_data$width_mm, na.rm = TRUE), value = min(clean_data$width_mm, na.rm = TRUE)),
+      sliderInput("height_mm", "Height (mm):", min = min(clean_data$height_mm, na.rm = TRUE), max = max(clean_data$height_mm, na.rm = TRUE), value = min(clean_data$height_mm, na.rm = TRUE)),
+      sliderInput("wheelbase_mm", "Wheelbase (mm):", min = min(clean_data$wheelbase_mm, na.rm = TRUE), max = max(clean_data$wheelbase_mm, na.rm = TRUE), value = min(clean_data$wheelbase_mm, na.rm = TRUE)),
+      sliderInput("curb_weight_kg", "Curb Weight (kg):", min = min(clean_data$curb_weight_kg, na.rm = TRUE), max = max(clean_data$curb_weight_kg, na.rm = TRUE), value = min(clean_data$curb_weight_kg, na.rm = TRUE)),
+      sliderInput("engine_hp", "Engine HP:", min = min(clean_data$engine_hp, na.rm = TRUE), max = max(clean_data$engine_hp, na.rm = TRUE), value = min(clean_data$engine_hp, na.rm = TRUE)),
+      actionButton("predict", "Predict")
     ),
     mainPanel(
-      plotOutput("plot")
-
+      textOutput("pred_max_speed"), 
+      textOutput("pred_accel"), 
+      textOutput("mse_max_speed"), 
+      textOutput("mse_accel"), 
+      textOutput("rmse_max_speed"), 
+      textOutput("rmse_accel"), 
+      plotOutput("max_speed_plot"), 
+      plotOutput("accel_plot")
     )
   )
 )
 
 
+
+
 # server
 server <- function(input, output) {
-
-  selected_data <- reactive({
-    # Get selected year range from the input
-    year_start <- input$year_range[1]
-    year_end <- input$year_range[2]
-
-    # Filter the dataset based on the year range
-    selected_data <- clean_data %>%
-      filter(
-        (year_from >= year_start) & (year_from <= year_end)    # Ensure year_to is within or after the selected start year
-      )
-
-    return(selected_data)
-  })
-
-  tree.carr <- reactive({
-      # get input version of model
-      tree_model <- tree(
-      max_speed_km_per_h ~ ., main="Max Speed KM Decision Tree",
-      data = selected_data(),
-      subset = train,
-      control = tree.control(nobs = nrow(selected_data()))
+  observeEvent(input$predict, {
+    print("Predict button clicked")  # Debugging line
+    
+    # Normalize input values for consistency
+    input_make <- tolower(trimws(input$make))
+    input_modle <- tolower(trimws(input$modle))
+    
+    # Normalize data values for consistency
+    clean_data$make <- tolower(trimws(clean_data$make))
+    clean_data$modle <- tolower(trimws(clean_data$modle))
+    
+    # Convert the specified features to numeric in the entire dataset
+    numeric_data <- clean_data %>%
+      mutate(across(c(number_of_seats, length_mm, width_mm, height_mm, wheelbase_mm, curb_weight_kg, engine_hp), as.numeric))
+    
+    # Print to debug
+    print("Converted data:")
+    print(numeric_data)
+    
+    # Build predictive models using the entire dataset
+    model_max_speed <- lm(max_speed_km_per_h ~ number_of_seats + length_mm + width_mm + height_mm + wheelbase_mm + curb_weight_kg + engine_hp + make + modle, data = numeric_data)
+    model_accel <- lm(acceleration_0_100_km.h_s ~ number_of_seats + length_mm + width_mm + height_mm + wheelbase_mm + curb_weight_kg + engine_hp + make + modle, data = numeric_data)
+    
+    # Print model summaries to debug
+    print(summary(model_max_speed))
+    print(summary(model_accel))
+    
+    # Calculate MSE for the models 
+    mse_max_speed <- mean(residuals(model_max_speed)^2) 
+    mse_accel <- mean(residuals(model_accel)^2) 
+    
+    # Calculate RMSE for the models 
+    rmse_max_speed <- sqrt(mse_max_speed) 
+    rmse_accel <- sqrt(mse_accel) 
+    
+    # Print MSE and RMSE values to debug 
+    print(paste("MSE for Max Speed: ", mse_max_speed)) 
+    print(paste("RMSE for Max Speed: ", rmse_max_speed)) 
+    print(paste("MSE for Acceleration: ", mse_accel)) 
+    print(paste("RMSE for Acceleration: ", rmse_accel))
+    
+    # Create a new data frame with the input values for prediction
+    new_data <- data.frame(
+      number_of_seats = as.numeric(input$number_of_seats),
+      length_mm = as.numeric(input$length_mm),
+      width_mm = as.numeric(input$width_mm),
+      height_mm = as.numeric(input$height_mm),
+      wheelbase_mm = as.numeric(input$wheelbase_mm),
+      curb_weight_kg = as.numeric(input$curb_weight_kg),
+      engine_hp = as.numeric(input$engine_hp),
+      make = as.factor(input_make),
+      modle = as.factor(input_modle)
     )
-
-    # set tree depth t0 input
-    tree_model_pruned <- prune.tree(tree_model, best = input$tree_depth)
-
-    return(tree_model_pruned)
+    
+    # Print new data to debug
+    print("New data for prediction:")
+    print(new_data)
+    
+    # Predict using the models
+    pred_max_speed <- predict(model_max_speed, newdata = new_data)
+    pred_accel <- predict(model_accel, newdata = new_data)
+    
+    # Print predictions to debug
+    print("Predictions:")
+    print(pred_max_speed)
+    print(pred_accel)
+    
+    # Output the predictions
+    output$pred_max_speed <- renderText({ paste("Predicted Max Speed: ", round(pred_max_speed, 2), " km/h") })
+    output$pred_accel <- renderText({ paste("Predicted Acceleration (0-100 km/h): ", round(pred_accel, 2), " s") })
+    output$mse_max_speed <- renderText({ paste("MSE for Max Speed Model: ", round(mse_max_speed, 2)) })
+    output$mse_accel <- renderText({ paste("MSE for Acceleration Model: ", round(mse_accel, 2)) })
+    output$rmse_accel <- renderText({ paste("RMSE for Acceleration Model: ", round(rmse_accel, 2)) })
+    output$rmse_max_speed <- renderText({ paste("RMSE for Max Speed Model: ", round(rmse_max_speed, 2)) })
   })
-
-  output$plot <- renderPlot({
-    #known bug
-    plot(tree.carr(), main = "Max Speed KM Decision Tree")
-    text(tree.carr(), use.n = TRUE, cex = 0.8)
+  
+  # Generate plot for max speed
+  output$max_speed_plot <- renderPlot({
+    avg_max_speed <- clean_data %>%
+      group_by(make) %>%
+      summarise(avg_max_speed = mean(max_speed_km_per_h, na.rm = TRUE)) %>%
+      arrange(desc(avg_max_speed))
+    
+    barplot(avg_max_speed$avg_max_speed, names.arg = paste(avg_max_speed$make),
+            xlab = "Make", ylab = "Max Speed (km/h)",
+            main = "Max Speed by Make",
+            col = "blue", las = 2, cex.names = 0.7)
   })
-
+  
+  # Generate plot for acceleration
+  output$accel_plot <- renderPlot({
+    avg_accel <- clean_data %>%
+      group_by(make) %>%
+      summarise(avg_accel = mean(acceleration_0_100_km.h_s, na.rm = TRUE)) %>%
+      arrange(avg_accel)
+    
+    barplot(avg_accel$avg_accel, names.arg = paste(avg_accel$make),
+            xlab = "Make", ylab = "Acceleration (0-100 km/h in s)",
+            main = "Acceleration by Make",
+            col = "green", las = 2, cex.names = 0.7)
+  })
 }
 
 shinyApp(ui = ui, server = server)
 
+
+shinyApp(ui = ui, server = server)
