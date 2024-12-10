@@ -236,7 +236,7 @@ train = sample(1:nrow(numeric_data), nrow(numeric_data)/2)
 library(shiny)
 library(dplyr)
 
-# Assuming clean_data and numeric_data are already loaded and processed
+#shiny project
 ui <- fluidPage(
   titlePanel("Car Specification Dashboard"),
   sidebarLayout(
@@ -273,45 +273,45 @@ server <- function(input, output) {
   observeEvent(input$predict, {
     print("Predict button clicked")  # Debugging line
     
-    # Normalize input values for consistency
+    # normalize data
     input_make <- tolower(trimws(input$make))
     input_modle <- tolower(trimws(input$modle))
     
-    # Normalize data values for consistency
+    # normalize data
     clean_data$make <- tolower(trimws(clean_data$make))
     clean_data$modle <- tolower(trimws(clean_data$modle))
     
-    # Convert the specified features to numeric in the entire dataset
+    # ensure numeric
     numeric_data <- clean_data %>%
       mutate(across(c(number_of_seats, length_mm, width_mm, height_mm, wheelbase_mm, curb_weight_kg, engine_hp), as.numeric))
     
-    # Print to debug
-    print("Converted data:")
-    print(numeric_data)
+    # debug
+    #print("Converted data:")
+    #print(numeric_data)
     
-    # Build predictive models using the entire dataset
+    # predictive models
     model_max_speed <- lm(max_speed_km_per_h ~ number_of_seats + length_mm + width_mm + height_mm + wheelbase_mm + curb_weight_kg + engine_hp + make + modle, data = numeric_data)
     model_accel <- lm(acceleration_0_100_km.h_s ~ number_of_seats + length_mm + width_mm + height_mm + wheelbase_mm + curb_weight_kg + engine_hp + make + modle, data = numeric_data)
     
-    # Print model summaries to debug
-    print(summary(model_max_speed))
-    print(summary(model_accel))
+    # debug
+    #print(summary(model_max_speed))
+    #print(summary(model_accel))
     
-    # Calculate MSE for the models 
+    # MSE
     mse_max_speed <- mean(residuals(model_max_speed)^2) 
     mse_accel <- mean(residuals(model_accel)^2) 
     
-    # Calculate RMSE for the models 
+    # RMSE 
     rmse_max_speed <- sqrt(mse_max_speed) 
     rmse_accel <- sqrt(mse_accel) 
     
-    # Print MSE and RMSE values to debug 
+    # print MSE and RMSE
     print(paste("MSE for Max Speed: ", mse_max_speed)) 
     print(paste("RMSE for Max Speed: ", rmse_max_speed)) 
     print(paste("MSE for Acceleration: ", mse_accel)) 
     print(paste("RMSE for Acceleration: ", rmse_accel))
     
-    # Create a new data frame with the input values for prediction
+    # input/new data to be predicted
     new_data <- data.frame(
       number_of_seats = as.numeric(input$number_of_seats),
       length_mm = as.numeric(input$length_mm),
@@ -324,20 +324,20 @@ server <- function(input, output) {
       modle = as.factor(input_modle)
     )
     
-    # Print new data to debug
-    print("New data for prediction:")
-    print(new_data)
+    # debug
+    #print("New data for prediction:")
+    #print(new_data)
     
-    # Predict using the models
+    # predict
     pred_max_speed <- predict(model_max_speed, newdata = new_data)
     pred_accel <- predict(model_accel, newdata = new_data)
     
-    # Print predictions to debug
-    print("Predictions:")
-    print(pred_max_speed)
-    print(pred_accel)
+    # debug
+    #print("Predictions:")
+    #print(pred_max_speed)
+    #print(pred_accel)
     
-    # Output the predictions
+    # output the predictions
     output$pred_max_speed <- renderText({ paste("Predicted Max Speed: ", round(pred_max_speed, 2), " km/h") })
     output$pred_accel <- renderText({ paste("Predicted Acceleration (0-100 km/h): ", round(pred_accel, 2), " s") })
     output$mse_max_speed <- renderText({ paste("MSE for Max Speed Model: ", round(mse_max_speed, 2)) })
@@ -346,7 +346,7 @@ server <- function(input, output) {
     output$rmse_max_speed <- renderText({ paste("RMSE for Max Speed Model: ", round(rmse_max_speed, 2)) })
   })
   
-  # Generate plot for max speed
+  # plot for max speed
   output$max_speed_plot <- renderPlot({
     avg_max_speed <- clean_data %>%
       group_by(make) %>%
@@ -359,7 +359,7 @@ server <- function(input, output) {
             col = "blue", las = 2, cex.names = 0.7)
   })
   
-  # Generate plot for acceleration
+  # plot for acceleration
   output$accel_plot <- renderPlot({
     avg_accel <- clean_data %>%
       group_by(make) %>%
@@ -372,8 +372,5 @@ server <- function(input, output) {
             col = "green", las = 2, cex.names = 0.7)
   })
 }
-
-shinyApp(ui = ui, server = server)
-
 
 shinyApp(ui = ui, server = server)
