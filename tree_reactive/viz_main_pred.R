@@ -125,6 +125,14 @@ set.seed(1)
 train = sample(1:nrow(clean_data), nrow(clean_data)/2)
 
 train = sample(1:nrow(numeric_data), nrow(numeric_data)/2)
+
+
+
+#debug
+#print(cleaned_data)
+
+
+
 #Experimental----------------------------------------------------- 
 #wasnt able to invest as much time into these other ones
 #tree.car=tree(max_speed_km_per_h ~., clean_data,subset=train)
@@ -230,48 +238,83 @@ train = sample(1:nrow(numeric_data), nrow(numeric_data)/2)
 #
 #Experimental----------------------------------------------------- 
 
-
-
-# shiny car
+#shiny project
 library(shiny)
 library(dplyr)
 
-#shiny project
+# function to remove outliers based on IQR
+remove_outliers <- function(df, x = 100) {
+  df %>% 
+    # apply to each numeric column
+    mutate(across(where(is.numeric), function(x) {
+      Q1 <- quantile(x, 0.25, na.rm = TRUE)
+      Q3 <- quantile(x, 0.75, na.rm = TRUE)
+      IQR_value <- IQR(x, na.rm = TRUE)
+      
+      lower_bound <- Q1 - x * IQR_value
+      upper_bound <- Q3 + x * IQR_value
+      
+      # replace outliers with NA
+      x <- ifelse(x < lower_bound | x > upper_bound, NA, x)
+    })) %>%
+    # remove rows with any NA values
+    dplyr::filter(complete.cases(.))
+}
+
+print(summary(clean_data$number_of_seats))
+# remove outliers
+clean_data <- remove_outliers(clean_data)
+
+# debug cleaned data
+#print(cleaned_data)
+
+
+# calc means for default cases
+mean_year_from <- mean(clean_data$year_from, na.rm = TRUE)
+mean_year_to <- mean(clean_data$year_to, na.rm = TRUE)
+mean_city_fuel_per_100km_l <- mean(clean_data$city_fuel_per_100km_l,na.rm = TRUE)
+mean_length_mm <- mean(clean_data$length_mm, na.rm = TRUE)
+mean_width_mm <- mean(clean_data$width_mm, na.rm = TRUE)
+mean_height_mm <- mean(clean_data$height_mm, na.rm = TRUE)
+mean_wheelbase_mm <- mean(clean_data$wheelbase_mm, na.rm = TRUE)
+mean_curb_weight_kg <- mean(clean_data$curb_weight_kg, na.rm = TRUE)
+mean_engine_hp <- mean(clean_data$engine_hp, na.rm = TRUE)
+print(summary(clean_data$number_of_seats))
+
+# shiny UI
 ui <- fluidPage(
   titlePanel("Car Specification Dashboard"),
   sidebarLayout(
     sidebarPanel(
       selectInput("make", "Make:", choices = unique(clean_data$make), selected = NULL, multiple = TRUE),
       selectInput("modle", "Model:", choices = unique(clean_data$modle), selected = NULL, multiple = TRUE),
-      sliderInput("number_of_seats", "Number of Seats:", min = min(clean_data$number_of_seats, na.rm = TRUE), max = max(clean_data$number_of_seats, na.rm = TRUE), value = min(clean_data$number_of_seats, na.rm = TRUE)),
-      sliderInput("length_mm", "Length (mm):", min = min(clean_data$length_mm, na.rm = TRUE), max = max(clean_data$length_mm, na.rm = TRUE), value = min(clean_data$length_mm, na.rm = TRUE)),
-      sliderInput("width_mm", "Width (mm):", min = min(clean_data$width_mm, na.rm = TRUE), max = max(clean_data$width_mm, na.rm = TRUE), value = min(clean_data$width_mm, na.rm = TRUE)),
-      sliderInput("height_mm", "Height (mm):", min = min(clean_data$height_mm, na.rm = TRUE), max = max(clean_data$height_mm, na.rm = TRUE), value = min(clean_data$height_mm, na.rm = TRUE)),
-      sliderInput("wheelbase_mm", "Wheelbase (mm):", min = min(clean_data$wheelbase_mm, na.rm = TRUE), max = max(clean_data$wheelbase_mm, na.rm = TRUE), value = min(clean_data$wheelbase_mm, na.rm = TRUE)),
-      sliderInput("curb_weight_kg", "Curb Weight (kg):", min = min(clean_data$curb_weight_kg, na.rm = TRUE), max = max(clean_data$curb_weight_kg, na.rm = TRUE), value = min(clean_data$curb_weight_kg, na.rm = TRUE)),
-      sliderInput("engine_hp", "Engine HP:", min = min(clean_data$engine_hp, na.rm = TRUE), max = max(clean_data$engine_hp, na.rm = TRUE), value = min(clean_data$engine_hp, na.rm = TRUE)),
+      sliderInput("year_from", "Year From:", min = min(clean_data$year_from, na.rm = TRUE), max = max(clean_data$year_from, na.rm = TRUE), value = mean_year_from),
+      sliderInput("year_to", "Year To:", min = min(clean_data$year_to, na.rm = TRUE), max = max(clean_data$year_to, na.rm = TRUE), value = mean_year_to),
+      sliderInput("length_mm", "Length (mm):", min = min(clean_data$length_mm, na.rm = TRUE), max = max(clean_data$length_mm, na.rm = TRUE), value = mean_length_mm),
+      sliderInput("width_mm", "Width (mm):", min = min(clean_data$width_mm, na.rm = TRUE), max = max(clean_data$width_mm, na.rm = TRUE), value = mean_width_mm),
+      sliderInput("height_mm", "Height (mm):", min = min(clean_data$height_mm, na.rm = TRUE), max = max(clean_data$height_mm, na.rm = TRUE), value = mean_height_mm),
+      sliderInput("wheelbase_mm", "Wheelbase (mm):", min = min(clean_data$wheelbase_mm, na.rm = TRUE), max = max(clean_data$wheelbase_mm, na.rm = TRUE), value = mean_wheelbase_mm),
+      sliderInput("curb_weight_kg", "Curb Weight (kg):", min = min(clean_data$curb_weight_kg, na.rm = TRUE), max = max(clean_data$curb_weight_kg, na.rm = TRUE), value = mean_curb_weight_kg),
+      sliderInput("engine_hp", "Engine HP:", min = min(clean_data$engine_hp, na.rm = TRUE), max = max(clean_data$engine_hp, na.rm = TRUE), value = mean_engine_hp),
+      sliderInput("city_fuel_per_100km_l", "City Fuel Consumption 100km:", min = min(clean_data$city_fuel_per_100km_l, na.rm = TRUE), max = max(clean_data$city_fuel_per_100km_l, na.rm = TRUE), value = mean_city_fuel_per_100km_l),
       actionButton("predict", "Predict")
     ),
     mainPanel(
-      textOutput("pred_max_speed"), 
-      textOutput("pred_accel"), 
+      uiOutput("predictions"),
+      plotOutput("max_speed_plot"), 
+      plotOutput("accel_plot"),
       textOutput("mse_max_speed"), 
       textOutput("mse_accel"), 
       textOutput("rmse_max_speed"), 
-      textOutput("rmse_accel"), 
-      plotOutput("max_speed_plot"), 
-      plotOutput("accel_plot")
+      textOutput("rmse_accel")
     )
   )
 )
 
 
-
-
-# server
 server <- function(input, output) {
   observeEvent(input$predict, {
-    print("Predict button clicked")  # Debugging line
+    #print("Predict button clicked")  # debug
     
     # normalize data
     input_make <- tolower(trimws(input$make))
@@ -283,67 +326,86 @@ server <- function(input, output) {
     
     # ensure numeric
     numeric_data <- clean_data %>%
-      mutate(across(c(number_of_seats, length_mm, width_mm, height_mm, wheelbase_mm, curb_weight_kg, engine_hp), as.numeric))
-    
-    # debug
-    #print("Converted data:")
-    #print(numeric_data)
+      mutate(across(c(city_fuel_per_100km_l, length_mm, width_mm, height_mm, wheelbase_mm, curb_weight_kg, engine_hp, year_from, year_to), as.numeric))
     
     # predictive models
-    model_max_speed <- lm(max_speed_km_per_h ~ number_of_seats + length_mm + width_mm + height_mm + wheelbase_mm + curb_weight_kg + engine_hp + make + modle, data = numeric_data)
-    model_accel <- lm(acceleration_0_100_km.h_s ~ number_of_seats + length_mm + width_mm + height_mm + wheelbase_mm + curb_weight_kg + engine_hp + make + modle, data = numeric_data)
-    
-    # debug
-    #print(summary(model_max_speed))
-    #print(summary(model_accel))
+    model_max_speed <- lm(max_speed_km_per_h ~ city_fuel_per_100km_l + length_mm + width_mm + height_mm + wheelbase_mm + curb_weight_kg + engine_hp + year_from + year_to + make + modle, data = numeric_data)
+    model_accel <- lm(acceleration_0_100_km.h_s ~ city_fuel_per_100km_l + length_mm + width_mm + height_mm + wheelbase_mm + curb_weight_kg + engine_hp + year_from + year_to + make + modle, data = numeric_data)
     
     # MSE
-    mse_max_speed <- mean(residuals(model_max_speed)^2) 
-    mse_accel <- mean(residuals(model_accel)^2) 
+    mse_max_speed <- mean(residuals(model_max_speed)^2)
+    mse_accel <- mean(residuals(model_accel)^2)
     
-    # RMSE 
-    rmse_max_speed <- sqrt(mse_max_speed) 
-    rmse_accel <- sqrt(mse_accel) 
+    # RMSE
+    rmse_max_speed <- sqrt(mse_max_speed)
+    rmse_accel <- sqrt(mse_accel)
     
     # print MSE and RMSE
-    print(paste("MSE for Max Speed: ", mse_max_speed)) 
-    print(paste("RMSE for Max Speed: ", rmse_max_speed)) 
-    print(paste("MSE for Acceleration: ", mse_accel)) 
+    print(paste("MSE for Max Speed: ", mse_max_speed))
+    print(paste("RMSE for Max Speed: ", rmse_max_speed))
+    print(paste("MSE for Acceleration: ", mse_accel))
     print(paste("RMSE for Acceleration: ", rmse_accel))
     
-    # input/new data to be predicted
-    new_data <- data.frame(
-      number_of_seats = as.numeric(input$number_of_seats),
-      length_mm = as.numeric(input$length_mm),
-      width_mm = as.numeric(input$width_mm),
-      height_mm = as.numeric(input$height_mm),
-      wheelbase_mm = as.numeric(input$wheelbase_mm),
-      curb_weight_kg = as.numeric(input$curb_weight_kg),
-      engine_hp = as.numeric(input$engine_hp),
-      make = as.factor(input_make),
-      modle = as.factor(input_modle)
-    )
+    # prepare outputs
+    pred_max_speed_outputs <- tagList()
+    pred_accel_outputs <- tagList()
     
-    # debug
-    #print("New data for prediction:")
-    #print(new_data)
-    
-    # predict
-    pred_max_speed <- predict(model_max_speed, newdata = new_data)
-    pred_accel <- predict(model_accel, newdata = new_data)
-    
-    # debug
-    #print("Predictions:")
-    #print(pred_max_speed)
-    #print(pred_accel)
+    for (make in input_make) {
+      for (modle in input_modle) {
+        # Input/new data to be predicted
+        new_data <- data.frame(
+          city_fuel_per_100km_l = as.numeric(input$city_fuel_per_100km_l),
+          length_mm = as.numeric(input$length_mm),
+          width_mm = as.numeric(input$width_mm),
+          height_mm = as.numeric(input$height_mm),
+          wheelbase_mm = as.numeric(input$wheelbase_mm),
+          curb_weight_kg = as.numeric(input$curb_weight_kg),
+          engine_hp = as.numeric(input$engine_hp),
+          year_from = as.numeric(input$year_from),
+          year_to = as.numeric(input$year_to),
+          make = as.factor(make),
+          modle = as.factor(modle)
+        )
+        
+
+        
+        # ensure new_data contains only the predictors
+        predictors <- names(model_max_speed$model)
+        predictors <- predictors[!predictors %in% c("max_speed_km_per_h", "acceleration_0_100_km.h_s")]
+        
+        # missing columns debug
+        missing_columns <- setdiff(predictors, names(new_data))
+        if (length(missing_columns) > 0) {
+          stop(paste("Missing columns in new_data:", paste(missing_columns, collapse = ", ")))
+        }
+        
+        # predict
+        pred_max_speed <- predict(model_max_speed, newdata = new_data)
+        pred_accel <- predict(model_accel, newdata = new_data)
+        
+        # append predictions
+        pred_max_speed_outputs <- tagAppendChild(pred_max_speed_outputs, 
+                                                 div(paste("Make: ", make, " | Model: ", modle, " - Predicted Max Speed: ", round(pred_max_speed, 2), " km/h"))
+        )
+        pred_accel_outputs <- tagAppendChild(pred_accel_outputs, 
+                                             div(paste("Make: ", make, " | Model: ", modle, " - Predicted Acceleration (0-100 km/h): ", round(pred_accel, 2), " s"))
+        )
+      }
+    }
     
     # output the predictions
-    output$pred_max_speed <- renderText({ paste("Predicted Max Speed: ", round(pred_max_speed, 2), " km/h") })
-    output$pred_accel <- renderText({ paste("Predicted Acceleration (0-100 km/h): ", round(pred_accel, 2), " s") })
+    output$predictions <- renderUI({
+      tagList(
+        h3("Predictions for Max Speed:"),
+        pred_max_speed_outputs,
+        h3("Predictions for Acceleration:"),
+        pred_accel_outputs
+      )
+    })
     output$mse_max_speed <- renderText({ paste("MSE for Max Speed Model: ", round(mse_max_speed, 2)) })
+    output$rmse_max_speed <- renderText({ paste("RMSE for Max Speed Model: ", round(rmse_max_speed, 2)) })
     output$mse_accel <- renderText({ paste("MSE for Acceleration Model: ", round(mse_accel, 2)) })
     output$rmse_accel <- renderText({ paste("RMSE for Acceleration Model: ", round(rmse_accel, 2)) })
-    output$rmse_max_speed <- renderText({ paste("RMSE for Max Speed Model: ", round(rmse_max_speed, 2)) })
   })
   
   # plot for max speed

@@ -89,8 +89,7 @@ ui <- fluidPage(
         "Select Brand:", 
         choices = unique(usa_clean$brand)
       ),
-      helpText("Choose the car manufacturer from the list of available brands. Only brands with sufficient data are included."),
-      
+
       sliderInput(
         "year", 
         "Car Year:", 
@@ -100,8 +99,7 @@ ui <- fluidPage(
         step = 1, 
         sep = ""
       ),
-      helpText("Select the manufacturing year of the car. Older cars may generally have lower prices, depending on other factors."),
-      
+
       sliderInput(
         "mileage", 
         "Mileage:", 
@@ -110,15 +108,13 @@ ui <- fluidPage(
         value = 50000, 
         step = 1000
       ),
-      helpText("Set the total mileage of the car. Lower mileage typically indicates less wear and tear, which can result in higher prices."),
-      
+
       selectInput(
         "title_status", 
         "Title Status:", 
         choices = unique(usa_clean$title_status)
       ),
-      helpText("Select the car's title status (e.g., Clean, Salvage). Clean titles usually increase a car's value."),
-      
+
       actionButton("predict_btn", "Predict Price"),
       textOutput("predicted_price")
     ),
